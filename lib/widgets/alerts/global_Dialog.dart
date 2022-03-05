@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
 
 class GlobalMethods {
   Future<void> showSnackBar(BuildContext context, String message, String title,
@@ -18,7 +19,7 @@ class GlobalMethods {
           ),
           actions: <Widget>[
             ElevatedButton(
-              child: Text('Yes'),
+              child: const Text('Yes'),
               onPressed: () {
                 callback();
                 Navigator.of(context).pop();
@@ -34,5 +35,29 @@ class GlobalMethods {
         );
       },
     );
+  }
+
+  Future<void> authDialoge(
+    BuildContext context,
+    String title,
+    String message,
+  ) {
+    return Alert(
+      context: context,
+      type: AlertType.error,
+      title: title,
+      desc: message,
+      buttons: [
+        DialogButton(
+          child: Text(
+            "Okay",
+            style: TextStyle(
+                color: Color.fromARGB(255, 20, 184, 156), fontSize: 20),
+          ),
+          onPressed: () => Navigator.pop(context),
+          width: 120,
+        )
+      ],
+    ).show();
   }
 }

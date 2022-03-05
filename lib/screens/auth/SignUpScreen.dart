@@ -1,12 +1,12 @@
 import 'dart:io';
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import 'package:stack/controller/auth/authController.dart';
 import 'package:stack/screens/auth/Login.dart';
+import 'package:stack/widgets/alerts/global_Dialog.dart';
 import 'package:stack/widgets/wave/customWave.dart';
-import 'package:wave/config.dart';
-import 'package:wave/wave.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -19,24 +19,20 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
-//
 // request a user for permission first
 
-  //
-  void _chanageVisibility() {
-    setState(() {
-      _isVisible = !_isVisible;
-    });
-  }
-
+// variable
   final _formKey = GlobalKey<FormState>();
-
   String _email = '';
   String _password = '';
   String _fullName = '';
   late int _phoneNumber;
   File? _image;
-
+  bool _isVisible = false;
+  bool _isLoading = false;
+  GlobalMethods globalMethods = GlobalMethods();
+  FirebaseAuth _auth = FirebaseAuth.instance;
+// functions
   Future _getImage() async {
     if (await Permission.contacts.request().isGranted) {
       final image = await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -55,13 +51,27 @@ class _SignupScreenState extends State<SignupScreen> {
     });
   }
 
-  bool _isVisible = false;
-
-  void _submitData() {
+  void _submitData() async {
     final _isValid = _formKey.currentState!.validate();
     FocusScope.of(context).unfocus();
     if (_isValid) {
       _formKey.currentState!.save();
+      setState(() {
+        _isLoading = true;
+      });
+    }
+    try {
+      await _auth
+          .createUserWithEmailAndPassword(
+              email: _email.toLowerCase().trim(), password: _password.trim())
+          .then((value) =>
+              Navigator.canPop(context) ? Navigator.pop(context) : null);
+    } on FirebaseAuthException catch (e) {
+      globalMethods.authDialoge(context, e.code, e.message.toString());
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -79,7 +89,12 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+
+    //
+
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           RotatedBox(
@@ -105,14 +120,14 @@ class _SignupScreenState extends State<SignupScreen> {
                                 _image == null ? null : FileImage(_image!),
                             backgroundColor: Colors.teal.withOpacity(0.6),
                             child: Icon(
-                              _image == null ? null : Icons.camera,
+                              _image == null ? Icons.camera : null,
                               color: Colors.white,
                               size: 50,
                             ),
                           ),
                         ),
                         const SizedBox(width: 20),
-                        Text(
+                        const Text(
                           'Signup',
                           style: TextStyle(fontSize: 65),
                         ),
@@ -200,7 +215,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       },
                       onEditingComplete: _submitData,
                       obscureText: _isVisible,
-                      key: ValueKey('password'),
+                      key: const ValueKey('password'),
                       validator: (value) {
                         if (value!.isEmpty || value.length < 8) {
                           return 'Password must be atleast 8 units';
@@ -236,16 +251,20 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                         width: MediaQuery.of(context).size.width - 60,
                         height: 55,
-                        child: Center(
-                          child: Text(
-                            'Sign up',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
+                        child: _isLoading
+                            ? Center(
+                                child: CircularProgressIndicator(),
+                              )
+                            : Center(
+                                child: Text(
+                                  'Sign up',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                       ),
                     ),
                   ],
@@ -262,7 +281,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     Navigator.of(context)
                         .pushReplacementNamed(LogInScreen.routeName);
                   },
-                  child: Text(
+                  child: const Text(
                     'Login to Your Account',
                     style: TextStyle(color: Colors.deepPurpleAccent),
                   ),

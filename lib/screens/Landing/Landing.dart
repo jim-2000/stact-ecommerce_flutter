@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:stack/navScreens/bottom_nav_Screen.dart';
 import 'package:stack/screens/auth/Login.dart';
 import 'package:stack/screens/auth/SignUpScreen.dart';
-import 'package:stack/screens/homeScreen.dart';
 
 class LandingScreen extends StatefulWidget {
   static String routeName = 'landing_screen';
@@ -14,38 +13,38 @@ class LandingScreen extends StatefulWidget {
 
 class _LandingScreenState extends State<LandingScreen>
     with TickerProviderStateMixin {
-  late AnimationController _animatedController;
+  // late AnimationController _animatedController;
   late Animation<double> _animation;
 //
-  List<String> _images = [
+  final List<String> _images = [
     'assets/images/shopping1.jpeg',
     'assets/images/shopping2.jpeg',
   ];
 
 //
 
-  @override
-  void initState() {
-    _images.shuffle();
-    _animatedController = AnimationController(
-      vsync: this,
-      duration: Duration(seconds: 20),
-    );
-    _animation =
-        CurvedAnimation(parent: _animatedController, curve: Curves.linear)
-          ..addListener(() {
-            setState(() {});
-          })
-          ..addStatusListener((status) {
-            if (status == AnimationStatus.completed) {
-              _animatedController.reset();
-              _animatedController.forward();
-            }
-          });
-    _animatedController.forward();
-    // TODO: implement initState
-    super.initState();
-  }
+  // @override
+  // void initState() {
+  //   _images.shuffle();
+  //   _animatedController = AnimationController(
+  //     vsync: this,
+  //     duration: Duration(seconds: 20),
+  //   );
+  //   _animation =
+  //       CurvedAnimation(parent: _animatedController, curve: Curves.linear)
+  //         ..addListener(() {
+  //           setState(() {});
+  //         })
+  //         ..addStatusListener((status) {
+  //           if (status == AnimationStatus.completed) {
+  //             _animatedController.reset();
+  //             _animatedController.forward();
+  //           }
+  //         });
+  //   _animatedController.forward();
+  //   // TODO: implement initState
+  //   super.initState();
+  // }
 
   //
   @override
@@ -59,19 +58,17 @@ class _LandingScreenState extends State<LandingScreen>
             child: Image.asset(
               _images[0],
               fit: BoxFit.cover,
-              alignment: FractionalOffset(_animation.value, 0),
+              // alignment: FractionalOffset(_animation.value, 0),
             ),
           ),
-          //
-
           Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               //
-              SizedBox(height: 50),
+              const SizedBox(height: 50),
               Container(
                 width: double.infinity,
-                child: Text(
+                child: const Text(
                   'Welcome to',
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -104,7 +101,6 @@ class _LandingScreenState extends State<LandingScreen>
               )),
             ],
           ),
-
           Column(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [

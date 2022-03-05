@@ -1,7 +1,8 @@
 import 'dart:io';
-
 import 'package:badges/badges.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:stack/controller/Themecontroller.dart';
+import 'package:stack/controller/auth/authController.dart';
 import 'package:stack/provider/cartProvider.dart';
 import 'package:stack/provider/wishListProvider.dart';
 import 'package:stack/screens/cart_screen.dart';
@@ -32,6 +33,7 @@ class _UserScreenState extends State<UserScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
     return Scaffold(
       body: Stack(
         children: [
@@ -153,6 +155,7 @@ class _UserScreenState extends State<UserScreen> {
                             value: notifier.isDark,
                             onChanged: (value) {
                               notifier.toogleTheme(value);
+
                               print(value);
                             },
                           );
@@ -163,10 +166,12 @@ class _UserScreenState extends State<UserScreen> {
                         // subtilte: "+880 1843687579",
                         licon: Icons.power_settings_new,
                         liconColor: Colors.redAccent,
-                        ontapped: () {
-                          Navigator.of(context).canPop()
-                              ? Navigator.of(context).pop()
+                        ontapped: () async {
+                          await FirebaseAuth.instance.signOut();
+                          Navigator.canPop(context)
+                              ? Navigator.pop(context)
                               : null;
+                          print("log out");
                         },
                       ),
                       SizedBox(

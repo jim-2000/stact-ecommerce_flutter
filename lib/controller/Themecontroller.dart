@@ -1,9 +1,9 @@
-// ignore: file_names
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeNotifier with ChangeNotifier {
   late bool _isDark;
+
   //
   bool get isDark => _isDark;
 

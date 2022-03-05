@@ -1,12 +1,16 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:stack/controller/Themecontroller.dart';
+import 'package:stack/controller/auth/authController.dart';
 import 'package:stack/navScreens/bottom_nav_Screen.dart';
 import 'package:stack/provider/cartProvider.dart';
 import 'package:stack/provider/productNotifier.dart';
 import 'package:stack/provider/wishListProvider.dart';
+import 'package:stack/screens/AppScreen.dart';
 import 'package:stack/screens/Landing/Landing.dart';
 import 'package:stack/screens/ProductDetails.dart';
 import 'package:stack/screens/auth/Login.dart';
 import 'package:stack/screens/auth/SignUpScreen.dart';
+import 'package:stack/screens/auth/authStateScreen.dart';
 import 'package:stack/screens/cart_screen.dart';
 import 'package:stack/screens/catagory_feed.dart';
 import 'package:stack/screens/feedScreen.dart';
@@ -20,7 +24,9 @@ import 'package:stack/styles/themes/myApptheme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -36,11 +42,12 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (ctx) => ProductProvider()),
         ChangeNotifierProvider(create: (ctx) => CartProvider()),
         ChangeNotifierProvider(create: (ctx) => WishlistProvider()),
+        ChangeNotifierProvider(create: (ctx) => AuthProvider()),
       ],
       child: Consumer<ThemeNotifier>(builder: (context, notifier, _) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          home: UploadProductScreen(),
+          home: const AuthStateScreen(),
           theme: MyappTheme.mytheme(notifier.isDark, context),
           routes: {
             HomeScreen.routesName: (ctx) => const HomeScreen(),

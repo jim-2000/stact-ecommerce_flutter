@@ -1,5 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:stack/controller/auth/authController.dart';
+import 'package:stack/navScreens/bottom_nav_Screen.dart';
 import 'package:stack/screens/auth/SignUpScreen.dart';
+import 'package:stack/widgets/alerts/global_Dialog.dart';
 import 'package:stack/widgets/wave/customWave.dart';
 
 class LogInScreen extends StatefulWidget {
@@ -22,17 +27,35 @@ class _LogInScreenState extends State<LogInScreen> {
   String _password = '';
 
   bool _isVisible = false;
+  bool _isLoading = false;
+  GlobalMethods globalMethods = GlobalMethods();
+  FirebaseAuth _auth = FirebaseAuth.instance;
+  FocusNode _passwordFocusNode = FocusNode();
 
-  void _submitData() {
+  void _submitData() async {
     final _isValid = _formKey.currentState!.validate();
     FocusScope.of(context).unfocus();
     if (_isValid) {
+      setState(() {
+        _isLoading = true;
+      });
       _formKey.currentState!.save();
-      print(_email);
+    }
+    try {
+      await _auth
+          .signInWithEmailAndPassword(
+              email: _email.toLowerCase().trim(), password: _password.trim())
+          .then((value) =>
+              Navigator.canPop(context) ? Navigator.pop(context) : null);
+      // Navigator.of(context).pushReplacementNamed(BottomNavScreen.routesName);
+    } on FirebaseAuthException catch (e) {
+      globalMethods.authDialoge(context, e.code, e.message.toString());
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
-
-  FocusNode _passwordFocusNode = FocusNode();
 
   @override
   void dispose() {
@@ -42,7 +65,10 @@ class _LogInScreenState extends State<LogInScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           RotatedBox(
@@ -58,7 +84,7 @@ class _LogInScreenState extends State<LogInScreen> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     const SizedBox(height: 80),
-                    Center(
+                    const Center(
                       child: Text(
                         'Login',
                         style: TextStyle(fontSize: 65),
@@ -132,16 +158,20 @@ class _LogInScreenState extends State<LogInScreen> {
                         ),
                         width: MediaQuery.of(context).size.width - 60,
                         height: 55,
-                        child: Center(
-                          child: Text(
-                            'Login',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
+                        child: _isLoading
+                            ? Center(
+                                child: CircularProgressIndicator(),
+                              )
+                            : Center(
+                                child: Text(
+                                  'Login',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                       ),
                     ),
                   ],

@@ -1,9 +1,6 @@
-import 'dart:ffi';
-
 import 'package:provider/provider.dart';
 import 'package:stack/navScreens/bottom_nav_Screen.dart';
 import 'package:stack/provider/cartProvider.dart';
-import 'package:stack/screens/homeScreen.dart';
 import 'package:stack/widgets/alerts/global_Dialog.dart';
 import 'package:stack/widgets/cart/emptyCart.dart';
 import 'package:stack/widgets/cart/fullCartscreen.dart';
@@ -43,7 +40,7 @@ class CartScreen extends StatelessWidget {
                       () => cartProvider.removeAll(),
                     );
                   },
-                  icon: Icon(Icons.delete),
+                  icon: const Icon(Icons.delete),
                 ),
               ],
             ),
