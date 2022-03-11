@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:badges/badges.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:stack/controller/Themecontroller.dart';
 import 'package:stack/controller/auth/authController.dart';
@@ -19,15 +20,61 @@ class UserScreen extends StatefulWidget {
 }
 
 class _UserScreenState extends State<UserScreen> {
+  bool isLoading = false;
   double top = 0;
   late ScrollController _scrollController;
+  FirebaseAuth _auth = FirebaseAuth.instance;
+  String _uid = '';
+  String _name = '';
+  String _email = '';
+  String _photoUrl = '';
+  String _joinedAt = '';
+  late int _phoneNumber;
 
+  //
+  void getData() async {
+    setState(() {
+      isLoading = true;
+    });
+    User? user = _auth.currentUser;
+    _uid = user!.uid;
+
+    //
+
+    if (user.isAnonymous) {
+      setState(() {
+        _name = 'Guest';
+        _email = 'guestmai.24@gmail.com';
+        _joinedAt = DateTime.now().toString();
+        _phoneNumber = 1918888888;
+        _photoUrl =
+            'https://avatars.githubusercontent.com/u/64397792?s=400&u=b893043c1c3b0a6ef368d9c9e4ee71dda86159c6&v=4';
+        isLoading = false;
+      });
+    } else {
+      final DocumentSnapshot userDocs =
+          await FirebaseFirestore.instance.collection("users").doc(_uid).get();
+      setState(() {
+        _name = userDocs.get("fullName") ?? 'Guest';
+        _email = userDocs.get("email") ?? 'gestmail@gmail.com';
+        _joinedAt = userDocs.get("joinedDate") ?? DateTime.now().toString();
+        _phoneNumber = userDocs.get("phoneNumber") ?? 018988888888;
+        _photoUrl = userDocs.get('image') ??
+            'https://avatars.githubusercontent.com/u/64397792?s=400&u=b893043c1c3b0a6ef368d9c9e4ee71dda86159c6&v=4';
+        isLoading = false;
+      });
+    }
+  }
+
+//
   @override
   void initState() {
+    getData();
     _scrollController = ScrollController();
     _scrollController.addListener(() {
       setState(() {});
     });
+
     super.initState();
   }
 
@@ -35,194 +82,206 @@ class _UserScreenState extends State<UserScreen> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     return Scaffold(
-      body: Stack(
-        children: [
-          CustomScrollView(
-            controller: _scrollController,
-            physics:
-                BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-            slivers: [
-              SliverAppBar(
-                backgroundColor: Colors.deepPurple,
-                pinned: true,
-                stretch: true,
-                expandedHeight: 250,
-                flexibleSpace: FlexibleSpaceBar(
-                  centerTitle: true,
-                  title: Row(
-                    children: [
-                      SizedBox(
-                        width: 12,
-                      ),
-                      SizedBox(
-                        child: CircleAvatar(
-                          backgroundImage: NetworkImage(
-                              "https://avatars.githubusercontent.com/u/64397792?s=400&u=b893043c1c3b0a6ef368d9c9e4ee71dda86159c6&v=4 "),
+      primary: false,
+      body: isLoading
+          ? Container(
+              color: Colors.blueGrey,
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            )
+          : Stack(
+              children: [
+                CustomScrollView(
+                  controller: _scrollController,
+                  physics: BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics()),
+                  slivers: [
+                    SliverAppBar(
+                      backgroundColor: Colors.deepPurple,
+                      pinned: true,
+                      stretch: true,
+                      expandedHeight: 250,
+                      flexibleSpace: FlexibleSpaceBar(
+                        centerTitle: true,
+                        title: Row(
+                          children: [
+                            SizedBox(
+                              width: 12,
+                            ),
+                            SizedBox(
+                              child: CircleAvatar(
+                                backgroundImage: NetworkImage(_photoUrl),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 12,
+                            ),
+                            Text(_name),
+                          ],
+                        ),
+                        background: Image.network(
+                          _photoUrl,
+                          fit: BoxFit.cover,
                         ),
                       ),
-                      SizedBox(
-                        width: 12,
-                      ),
-                      Text("Hossain Al Jim"),
-                    ],
-                  ),
-                  background: Image.network(
-                    "https://images.pexels.com/photos/296282/pexels-photo-296282.jpeg?auto=compress&cs=tinysrgb&h=750&w=1260",
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: ListView(
-                    primary: false,
-                    shrinkWrap: true,
-                    children: [
-                      _usertiletext(text: "User Bag"),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Consumer<WishlistProvider>(
-                        builder: (context, wp, _) {
-                          return Badge(
-                            toAnimate: true,
-                            animationType: BadgeAnimationType.slide,
-                            elevation: 6,
-                            badgeContent:
-                                Text(wp.getWishlist.length.toString()),
-                            position: BadgePosition.topStart(top: 5, start: 5),
-                            child: _userTilewidgets(
-                              text: "Wish list",
-                              licon: Icons.favorite,
-                              liconColor: Colors.deepOrange,
-                              ticon: Icons.arrow_forward_ios,
-                              ticonColor: Colors.grey,
-                              ontapped: () {
-                                Navigator.of(context)
-                                    .pushNamed(WishList.routeName);
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: ListView(
+                          primary: false,
+                          shrinkWrap: true,
+                          children: [
+                            _usertiletext(text: "User Bag"),
+                            const SizedBox(
+                              height: 10,
+                            ),
+                            Consumer<WishlistProvider>(
+                              builder: (context, wp, _) {
+                                return Badge(
+                                  toAnimate: true,
+                                  animationType: BadgeAnimationType.slide,
+                                  elevation: 6,
+                                  badgeContent:
+                                      Text(wp.getWishlist.length.toString()),
+                                  position:
+                                      BadgePosition.topStart(top: 5, start: 5),
+                                  child: _userTilewidgets(
+                                    text: "Wish list",
+                                    licon: Icons.favorite,
+                                    liconColor: Colors.deepOrange,
+                                    ticon: Icons.arrow_forward_ios,
+                                    ticonColor: Colors.grey,
+                                    ontapped: () {
+                                      Navigator.of(context)
+                                          .pushNamed(WishList.routeName);
+                                    },
+                                  ),
+                                );
                               },
                             ),
-                          );
-                        },
-                      ),
-                      Consumer<CartProvider>(builder: (context, cp, _) {
-                        return Badge(
-                          toAnimate: true,
-                          animationType: BadgeAnimationType.slide,
-                          elevation: 6,
-                          badgeContent: Text(cp.getcartList.length.toString()),
-                          position: BadgePosition.topStart(top: 5, start: 5),
-                          child: _userTilewidgets(
-                            text: "Card",
-                            licon: Icons.shopping_cart_sharp,
-                            liconColor: Colors.grey,
-                            ticon: Icons.arrow_forward_ios,
-                            ticonColor: Colors.grey,
-                            ontapped: () {
-                              Navigator.of(context)
-                                  .pushNamed(CartScreen.routesName);
-                            },
-                          ),
-                        );
-                      }),
-                      SizedBox(
-                        height: 15,
-                      ),
-                      _usertiletext(
-                        text: "User settings",
-                      ),
-                      SizedBox(
-                        height: 15,
-                      ),
-                      //
-                      Card(
-                        child: Consumer<ThemeNotifier>(
-                            builder: (context, notifier, _) {
-                          return SwitchListTile.adaptive(
-                            secondary: notifier.isDark
-                                ? Icon(
-                                    Icons.dark_mode,
-                                    color: Colors.amber.shade700,
-                                  )
-                                : Icon(
-                                    Icons.light_mode,
-                                    color: Colors.amber.shade700,
-                                  ),
-                            title: Text(
-                              notifier.isDark ? "Dark Mode" : "Light Mode",
+                            Consumer<CartProvider>(builder: (context, cp, _) {
+                              return Badge(
+                                toAnimate: true,
+                                animationType: BadgeAnimationType.slide,
+                                elevation: 6,
+                                badgeContent:
+                                    Text(cp.getcartList.length.toString()),
+                                position:
+                                    BadgePosition.topStart(top: 5, start: 5),
+                                child: _userTilewidgets(
+                                  text: "Card",
+                                  licon: Icons.shopping_cart_sharp,
+                                  liconColor: Colors.grey,
+                                  ticon: Icons.arrow_forward_ios,
+                                  ticonColor: Colors.grey,
+                                  ontapped: () {
+                                    Navigator.of(context)
+                                        .pushNamed(CartScreen.routesName);
+                                  },
+                                ),
+                              );
+                            }),
+                            SizedBox(
+                              height: 15,
                             ),
-                            value: notifier.isDark,
-                            onChanged: (value) {
-                              notifier.toogleTheme(value);
+                            _usertiletext(
+                              text: "User settings",
+                            ),
+                            SizedBox(
+                              height: 15,
+                            ),
+                            //
+                            Card(
+                              child: Consumer<ThemeNotifier>(
+                                  builder: (context, notifier, _) {
+                                return SwitchListTile.adaptive(
+                                  secondary: notifier.isDark
+                                      ? Icon(
+                                          Icons.dark_mode,
+                                          color: Colors.amber.shade700,
+                                        )
+                                      : Icon(
+                                          Icons.light_mode,
+                                          color: Colors.amber.shade700,
+                                        ),
+                                  title: Text(
+                                    notifier.isDark
+                                        ? "Dark Mode"
+                                        : "Light Mode",
+                                  ),
+                                  value: notifier.isDark,
+                                  onChanged: (value) {
+                                    notifier.toogleTheme(value);
 
-                              print(value);
-                            },
-                          );
-                        }),
-                      ),
-                      _userTilewidgets(
-                        text: "Log out",
-                        // subtilte: "+880 1843687579",
-                        licon: Icons.power_settings_new,
-                        liconColor: Colors.redAccent,
-                        ontapped: () async {
-                          await FirebaseAuth.instance.signOut();
-                          Navigator.canPop(context)
-                              ? Navigator.pop(context)
-                              : null;
-                          print("log out");
-                        },
-                      ),
-                      SizedBox(
-                        height: 15,
-                      ),
-                      _usertiletext(
-                        text: "User Information",
-                      ),
-                      SizedBox(
-                        height: 15,
-                      ),
-                      //
-                      _userTilewidgets(
-                        text: "Phone",
-                        subtilte: "+880 1843687579",
-                        licon: Icons.phone,
-                        liconColor: Colors.deepPurple,
-                        ontapped: () {
-                          print("Phooooonee");
-                        },
-                      ),
-                      _userTilewidgets(
-                        text: "Email",
-                        subtilte: "Email",
-                        licon: Icons.email,
-                        liconColor: Colors.deepPurple,
-                        ontapped: () {},
-                      ),
+                                    print(value);
+                                  },
+                                );
+                              }),
+                            ),
+                            _userTilewidgets(
+                              text: "Log out",
+                              // subtilte: "+880 1843687579",
+                              licon: Icons.power_settings_new,
+                              liconColor: Colors.redAccent,
+                              ontapped: () async {
+                                await FirebaseAuth.instance.signOut();
+                                Navigator.canPop(context)
+                                    ? Navigator.pop(context)
+                                    : null;
+                                print("log out");
+                              },
+                            ),
+                            SizedBox(
+                              height: 15,
+                            ),
+                            _usertiletext(
+                              text: "User Information",
+                            ),
+                            SizedBox(
+                              height: 15,
+                            ),
+                            //
+                            _userTilewidgets(
+                              text: "Phone",
+                              subtilte: _phoneNumber.toString(),
+                              licon: Icons.phone,
+                              liconColor: Colors.deepPurple,
+                              ontapped: () {
+                                print("Phooooonee");
+                              },
+                            ),
+                            _userTilewidgets(
+                              text: "Email",
+                              subtilte: _email,
+                              licon: Icons.email,
+                              liconColor: Colors.deepPurple,
+                              ontapped: () {},
+                            ),
 
-                      _userTilewidgets(
-                        text: "Join Date",
-                        subtilte: "Email",
-                        licon: Icons.watch_later,
-                        liconColor: Colors.deepPurple,
-                        ontapped: () {},
+                            _userTilewidgets(
+                              text: "Join Date",
+                              subtilte: _joinedAt,
+                              licon: Icons.watch_later,
+                              liconColor: Colors.deepPurple,
+                              ontapped: () {},
+                            ),
+                            _userTilewidgets(
+                              text: "Address",
+                              subtilte: "Dhaka,Bangladesh",
+                              licon: Icons.local_shipping,
+                              ontapped: () {},
+                            ),
+                          ],
+                        ),
                       ),
-                      _userTilewidgets(
-                        text: "Address",
-                        subtilte: "Dhaka,Bangladesh",
-                        licon: Icons.local_shipping,
-                        ontapped: () {},
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-          _buildFav()
-        ],
-      ),
+                _buildFav()
+              ],
+            ),
     );
   }
 

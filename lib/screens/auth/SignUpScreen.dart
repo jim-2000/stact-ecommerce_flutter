@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -54,18 +56,48 @@ class _SignupScreenState extends State<SignupScreen> {
   void _submitData() async {
     final _isValid = _formKey.currentState!.validate();
     FocusScope.of(context).unfocus();
+//
+    final date = DateTime.now().toString();
+    final parseDate = DateTime.parse(date);
+    final formatedDate =
+        '${parseDate.day}/${parseDate.month}/${parseDate.year}';
+    //
     if (_isValid) {
       _formKey.currentState!.save();
-      setState(() {
-        _isLoading = true;
-      });
     }
     try {
-      await _auth
-          .createUserWithEmailAndPassword(
-              email: _email.toLowerCase().trim(), password: _password.trim())
-          .then((value) =>
-              Navigator.canPop(context) ? Navigator.pop(context) : null);
+      if (_image == null) {
+        return globalMethods.showSnackBar(context,
+            "Please Provide Image Then contineo", "Image can't be null", () {});
+      } else {
+        setState(() {
+          _isLoading = true;
+        });
+        final ref = FirebaseStorage.instance
+            .ref()
+            .child('user_images')
+            .child(_fullName + '.jpg');
+        await ref.putFile(_image!);
+        final _url = await ref.getDownloadURL();
+        await _auth.createUserWithEmailAndPassword(
+          email: _email.toLowerCase().trim(),
+          password: _password.trim(),
+        );
+        final User? user = _auth.currentUser;
+        final _uid = user!.uid;
+        FirebaseFirestore.instance.collection('users').doc(_uid).set({
+          'uid': _uid,
+          'email': _email.toLowerCase(),
+          'fullName': _fullName.trim(),
+          'phoneNumber': _phoneNumber,
+          'image': _url,
+          'joinedDate': formatedDate,
+          'created': Timestamp.now(),
+        });
+        //
+
+        Navigator.canPop(context) ? Navigator.pop(context) : null;
+      }
     } on FirebaseAuthException catch (e) {
       globalMethods.authDialoge(context, e.code, e.message.toString());
     } finally {

@@ -5,7 +5,6 @@ import 'package:stack/navScreens/bottom_nav_Screen.dart';
 import 'package:stack/provider/cartProvider.dart';
 import 'package:stack/provider/productNotifier.dart';
 import 'package:stack/provider/wishListProvider.dart';
-import 'package:stack/screens/AppScreen.dart';
 import 'package:stack/screens/Landing/Landing.dart';
 import 'package:stack/screens/ProductDetails.dart';
 import 'package:stack/screens/auth/Login.dart';

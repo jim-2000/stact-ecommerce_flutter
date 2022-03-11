@@ -1,6 +1,7 @@
 import 'package:backdrop/backdrop.dart';
 import 'package:badges/badges.dart';
 import 'package:carousel_pro_nullsafety/carousel_pro_nullsafety.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:stack/provider/cartProvider.dart';
 import 'package:stack/provider/productNotifier.dart';
 import 'package:stack/provider/wishListProvider.dart';
@@ -115,8 +116,8 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             }),
             IconButton(
-              onPressed: () {
-                Navigator.of(context).pushNamed(UserScreen.routesName);
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
               },
               icon: const CircleAvatar(
                 backgroundColor: Colors.white,

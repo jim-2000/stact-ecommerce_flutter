@@ -1,7 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:stack/navScreens/bottom_nav_Screen.dart';
 import 'package:stack/screens/auth/Login.dart';
 import 'package:stack/screens/auth/SignUpScreen.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:stack/widgets/alerts/global_Dialog.dart';
 
 class LandingScreen extends StatefulWidget {
   static String routeName = 'landing_screen';
@@ -11,40 +15,74 @@ class LandingScreen extends StatefulWidget {
   State<LandingScreen> createState() => _LandingScreenState();
 }
 
-class _LandingScreenState extends State<LandingScreen>
-    with TickerProviderStateMixin {
-  // late AnimationController _animatedController;
-  late Animation<double> _animation;
+class _LandingScreenState extends State<LandingScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GlobalMethods _globalMethods = GlobalMethods();
+
+  bool _isLoading = false;
+
 //
   final List<String> _images = [
     'assets/images/shopping1.jpeg',
     'assets/images/shopping2.jpeg',
   ];
+// annonimous loging
 
-//
+  void _anonimousLogin() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      await _auth.signInAnonymously().then(
+          (value) => Navigator.canPop(context) ? Navigator.pop(context) : null);
+    } on FirebaseAuthException catch (e) {
+      _globalMethods.authDialoge(context, e.code, e.message.toString());
+      // ignore: avoid_print
+      print(e);
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
-  // @override
-  // void initState() {
-  //   _images.shuffle();
-  //   _animatedController = AnimationController(
-  //     vsync: this,
-  //     duration: Duration(seconds: 20),
-  //   );
-  //   _animation =
-  //       CurvedAnimation(parent: _animatedController, curve: Curves.linear)
-  //         ..addListener(() {
-  //           setState(() {});
-  //         })
-  //         ..addStatusListener((status) {
-  //           if (status == AnimationStatus.completed) {
-  //             _animatedController.reset();
-  //             _animatedController.forward();
-  //           }
-  //         });
-  //   _animatedController.forward();
-  //   // TODO: implement initState
-  //   super.initState();
-  // }
+// google signin
+  Future<UserCredential> signInWithGoogle() async {
+    // Trigger the authentication flow
+    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+    // Obtain the auth details from the request
+    final GoogleSignInAuthentication? googleAuth =
+        await googleUser?.authentication;
+
+    // Create a new credential
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth?.accessToken,
+      idToken: googleAuth?.idToken,
+    );
+
+    // Once signed in, return the UserCredential
+
+    final date = DateTime.now().toString();
+    final parseDate = DateTime.parse(date);
+    final formatedDate =
+        '${parseDate.day}/${parseDate.month}/${parseDate.year}';
+    final authResult =
+        await FirebaseAuth.instance.signInWithCredential(credential);
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(authResult.user!.uid)
+        .set({
+      'uid': authResult.user!.uid,
+      'email': authResult.user!.email!.toLowerCase(),
+      'fullName': authResult.user!.displayName!.trim(),
+      'phoneNumber': authResult.user!.phoneNumber,
+      'image': authResult.user!.photoURL,
+      'joinedDate': formatedDate,
+      'created': Timestamp.now(),
+    });
+    return authResult;
+  }
 
   //
   @override
@@ -127,19 +165,16 @@ class _LandingScreenState extends State<LandingScreen>
                   SizedBox(width: 10),
                 ],
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Row(
                 children: [
                   SizedBox(width: 10),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(
-                            context, BottomNavScreen.routesName);
-                      },
+                      onPressed: _anonimousLogin,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
+                        children: const [
                           Icon(Icons.people),
                           Text('Go to Guest'),
                         ],
@@ -149,20 +184,20 @@ class _LandingScreenState extends State<LandingScreen>
                   SizedBox(width: 10),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: signInWithGoogle,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
+                        children: const [
                           Icon(Icons.facebook_outlined),
-                          Text('Facebook'),
+                          Text('Google'),
                         ],
                       ),
                     ),
                   ),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
                 ],
               ),
-              SizedBox(height: 80),
+              const SizedBox(height: 80),
             ],
           ),
         ],
